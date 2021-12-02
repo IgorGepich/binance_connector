@@ -75,14 +75,10 @@ app.get('/price', (req, res) => {
  * @returns {JSON}
  */
 async function getLastPrice(){
-    const a = await binance.futuresPrices()
-    return {
-        "BTCUSDT": a.BTCUSDT
-    }
+    return await binance.futuresPrices()
 }
 
 /**
- *
  * @returns {String}
  */
 // async function getLastPrice(){
