@@ -13,7 +13,6 @@ const binance = new Binance().options({
     useServerTime: true
 })
 
-//
 app.post('/submit', (req, res) => {
     let postBodyRequest = '';
     req.on('data', chunk => {
@@ -30,45 +29,20 @@ app.post('/submit', (req, res) => {
 
         // These orders will be executed at current market price.
         if(orderType === "short") {
-            binance.marketSell(pair, quantity, {type:'LIMIT'}, (error, response) => {
-                console.info("Market Buy response", response)
-                console.info("order id: " + response.orderId)
-            })
+            binance.marketSell(pair, quantity)
+                .then(a => submitLog.info("short"))
         }
-
-
         if(orderType === "long") {
             binance.marketBuy(pair, quantity)
-                .then(a => submitLog.info("HI"))
+                .then(a => submitLog.info("long"))
         }
-        // binance.buy(pair, quantity, 0, "MARKET")
     })
+        // binance.buy(pair, quantity, 0, "MARKET")
 })
 
 app.get('/price', (req, res) => {
     getLastPrice()
         .then(async () => res.status(200).send(await getLastPrice()))
-        // .then(c => console.log(c))
-        // .then(res => console.log(res)
-
-
-    // req.on(getLastPrice())
-
-// .then(res => res.status(200).send("THEN"))
-//     res.status(200).send("getLastPrice()")
-
-
-    // Getting list of open orders
-    // binance.openOrders("ETHBTC", function(error, json) {
-        // console.log("openOrders()",json);
-    // });
-
-    // // .then(res =   > res.json())
-        // // .then(json => res.end(Buffer.from(JSON.stringify(json)))) // !!!!Возращает
-        // // .then(json => debugLog.debug(json))
-        // .catch(err => {
-        //     console.log(err, "Response error")
-        // })
 })
 
 /**
@@ -85,6 +59,31 @@ async function getLastPrice(){
 //     const a = await binance.futuresPrices()
 //     return a.BTCUSDT
 // }
+
+
+app.get('/balance', (req, res) => {
+    getBinanceBalance()
+        .then(async () => res.status(200).send(await getBinanceBalance()))
+})
+
+
+async function getBinanceBalance(){
+    // Getting list of current balances
+    binance.balance(async function (error, balances) {
+        // get all account balances
+        console.log("balances()", balances);
+        if (typeof balances.BTC !== "undefined") {
+            console.log("BTC balance: ", balances.BTC.available);
+        }
+        if (typeof balances.BNB !== "undefined") {
+            console.log("BNB balance: ", balances.BNB.available);
+        }
+        if (typeof balances.USDT !== "undefined") {
+            console.log("USDT balance: ", balances.USDT.available);
+        }
+    });
+        return await binance.balance()
+}
 
 app.listen(SERVER_SUBMIT_ORDER_PORT,() => {
     console.log('Server has been started on port', + SERVER_SUBMIT_ORDER_PORT, '...')

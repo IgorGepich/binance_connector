@@ -2,7 +2,7 @@
   "name": "binance_connector",
   "version": "1.0.0",
   "description": "app for connection to Binance",
-  "main": "app.js",
+  "main": "binance.js",
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
