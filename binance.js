@@ -4,13 +4,15 @@ import express from "express";
 import {submitLog} from './loggingConf.js';
 
 dotenv.config();
-const SERVER_SUBMIT_ORDER_PORT = process.env.SERVER_SUBMIT_ORDER_PORT;
+const BINANCE_SERVER_PORT = process.env.BINANCE_SERVER_PORT;
 const app = express();
 
 const binance = new Binance().options({
     APIKEY: process.env.API_KEY,
     APISECRET: process.env.API_SECRET,
-    useServerTime: true
+    useServerTime: true,
+    recvWindow: 60000,
+    test: true
 })
 
 app.post('/submit', (req, res) => {
@@ -26,23 +28,54 @@ app.post('/submit', (req, res) => {
         let orderType = params.type;
         let pair = params.pair;
         let quantity = params.volume;
+        const flags = {type: 'MARKET', newOrderRespType: 'FULL'};
 
         // These orders will be executed at current market price.
         if(orderType === "short") {
-            binance.marketSell(pair, quantity)
-                .then(a => submitLog.info("short"))
+            binance.marketSell(pair, quantity, flags, function (error, response){
+                if ( error ) return console.error('error');
+                console.log("Market Buy response", response);
+                // console.log("order id: " + response.orderId);
+                // console.log("First price: "+response.fills[0].price);
+            })
+                // .then(a => submitLog.info("short"))
         }
         if(orderType === "long") {
             binance.marketBuy(pair, quantity)
                 .then(a => submitLog.info("long"))
+                .catch(err => console.log("sdfs"))
         }
     })
         // binance.buy(pair, quantity, 0, "MARKET")
 })
 
+app.post('/limit', (req, res) => {
+    let postBodyRequest = '';
+    req.on('data', chunk => {
+        postBodyRequest += chunk.toString();
+    });
+
+    req.on('end', ()=>{
+        let params = JSON.parse(postBodyRequest);
+        let orderType = params.orderType;
+        let pair = params.pair;
+        let quantity = params.volume;
+        let price = params.price;
+
+        if(orderType === "sell") {
+            binance.sell(pair, quantity, price)
+        }
+        if(orderType === "buy") {
+            binance.buy(pair, quantity, price)
+        }
+    })
+})
+
+
 app.get('/price', (req, res) => {
     getLastPrice()
         .then(async () => res.status(200).send(await getLastPrice()))
+
 })
 
 /**
@@ -64,6 +97,7 @@ async function getLastPrice(){
 app.get('/balance', (req, res) => {
     getBinanceBalance()
         .then(async () => res.status(200).send(await getBinanceBalance()))
+        .catch(res => console.log(''))
 })
 
 
@@ -81,10 +115,65 @@ async function getBinanceBalance(){
         if (typeof balances.USDT !== "undefined") {
             console.log("USDT balance: ", balances.USDT.available);
         }
+        if (typeof balances.USDT !== "undefined") {
+            console.log("LUNA balance: ", balances.LUNA.available);
+        }
     });
         return await binance.balance()
 }
 
-app.listen(SERVER_SUBMIT_ORDER_PORT,() => {
-    console.log('Server has been started on port', + SERVER_SUBMIT_ORDER_PORT, '...')
+app.get('/orders', (req, res) => {
+    let b = getOrders()
+        .then(async () => res.status(200).send('sdf'+ await b))
+
+})
+
+async function getOrders() {
+    // Getting list of open orders
+    binance.openOrders(false, (error, openOrders) => {
+        console.info("openOrders", openOrders);
+        //
+        // });
+        // return binance.openOrders;
+        return "openOrders" + openOrders
+    })
+}
+
+app.get('/history', (req, res) => {
+    getTradeHistory()
+        .then(async () => res.status(200).send('JSON.stringify(getTradeHistory())'))
+        // .then(async () => res.json)
+
+})
+
+async function getTradeHistory(){
+    let coins = ["BTCUSDT", "LUNAUSDT", "BNBUSDT", "BNBBTC"]
+        for(let coin of coins) {
+            binance.trades(coin, (error, trades, symbol) => {
+                return console.info(symbol + " trade history", trades);
+            });
+        }
+}
+
+//
+app.get('/bal', (req, res) => {
+  getBal()
+      .then(async () => res.status(200).send('ds'))
+});
+
+
+async function getBal() {
+    await binance.useServerTime();
+    binance.balance((error, balances) => {
+        if (error) return console.error(error);
+        console.info("balances()", balances);
+        console.info("BNB balance: ", balances.BNB.available);
+    });
+}
+
+
+
+//
+app.listen(BINANCE_SERVER_PORT,() => {
+    console.log('Server has been started on port', + BINANCE_SERVER_PORT, '...')
 })
