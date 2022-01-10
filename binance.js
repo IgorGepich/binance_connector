@@ -11,8 +11,8 @@ const binance = new Binance().options({
     APIKEY: process.env.API_KEY,
     APISECRET: process.env.API_SECRET,
     useServerTime: true,
-    recvWindow: 60000,
-    test: true
+    // recvWindow: 60000,
+    // test: true
 })
 
 app.post('/submit', (req, res) => {
@@ -32,13 +32,15 @@ app.post('/submit', (req, res) => {
 
         // These orders will be executed at current market price.
         if(orderType === "short") {
-            binance.marketSell(pair, quantity, flags, function (error, response){
-                if ( error ) return console.error('error');
-                console.log("Market Buy response", response);
-                // console.log("order id: " + response.orderId);
-                // console.log("First price: "+response.fills[0].price);
-            })
-                // .then(a => submitLog.info("short"))
+            // binance.marketSell(pair, quantity, flags, function (error, response){
+            //     if ( error ) return console.error('error');
+            //     console.log("Market Buy response", response);
+            //
+            //
+            // })
+            binance.marketSell(pair, quantity)
+                .then(a => submitLog.info("short"))
+                .catch(err => console.log("sdfs"))
         }
         if(orderType === "long") {
             binance.marketBuy(pair, quantity)
@@ -62,12 +64,31 @@ app.post('/limit', (req, res) => {
         let quantity = params.volume;
         let price = params.price;
 
+        // if(orderType === "sell") {
+        //     binance.sell(pair, quantity, price)
+        // }
+        // if(orderType === "buy") {
+        //     binance.buy(pair, quantity, price)
+        // }
+
+
+        // let orderType = "sell";
+        // let pair = "LUNAUSDT";
+        // let quantity = 1.0;
+        // let price = 101.0;
         if(orderType === "sell") {
-            binance.sell(pair, quantity, price)
-        }
+            binance.sell(pair, quantity, price, {type:'LIMIT'}, (error, response) => {
+                console.info("Limit Buy response", response);
+                console.info("order id: " + response.orderId);
+        })}
         if(orderType === "buy") {
-            binance.buy(pair, quantity, price)
-        }
+            binance.buy(pair, quantity, price, {type:'LIMIT'}, (error, response) => {
+                console.info("Limit Buy response", response);
+                console.info("order id: " + response.orderId);
+            })}
+
+
+
     })
 })
 
@@ -134,8 +155,8 @@ async function getOrders() {
         console.info("openOrders", openOrders);
         //
         // });
-        // return binance.openOrders;
-        return "openOrders" + openOrders
+        return binance.openOrders;
+        // return "openOrders" + openOrders
     })
 }
 
