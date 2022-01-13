@@ -11,8 +11,6 @@ const binance = new Binance().options({
     APIKEY: process.env.API_KEY,
     APISECRET: process.env.API_SECRET,
     useServerTime: true,
-    // recvWindow: 60000,
-    // test: true
 })
 
 app.post('/submit', (req, res) => {
@@ -28,16 +26,9 @@ app.post('/submit', (req, res) => {
         let orderType = params.type;
         let pair = params.pair;
         let quantity = params.volume;
-        const flags = {type: 'MARKET', newOrderRespType: 'FULL'};
 
         // These orders will be executed at current market price.
         if(orderType === "short") {
-            // binance.marketSell(pair, quantity, flags, function (error, response){
-            //     if ( error ) return console.error('error');
-            //     console.log("Market Buy response", response);
-            //
-            //
-            // })
             binance.marketSell(pair, quantity)
                 .then(a => submitLog.info("short"))
                 .catch(err => console.log("sdfs"))
@@ -48,7 +39,6 @@ app.post('/submit', (req, res) => {
                 .catch(err => console.log("sdfs"))
         }
     })
-        // binance.buy(pair, quantity, 0, "MARKET")
 })
 
 app.post('/limit', (req, res) => {
@@ -64,14 +54,6 @@ app.post('/limit', (req, res) => {
         let quantity = params.volume;
         let price = params.price;
 
-        // if(orderType === "sell") {
-        //     binance.sell(pair, quantity, price)
-        // }
-        // if(orderType === "buy") {
-        //     binance.buy(pair, quantity, price)
-        // }
-
-
         // let orderType = "sell";
         // let pair = "LUNAUSDT";
         // let quantity = 1.0;
@@ -86,9 +68,6 @@ app.post('/limit', (req, res) => {
                 console.info("Limit Buy response", response);
                 console.info("order id: " + response.orderId);
             })}
-
-
-
     })
 })
 
@@ -136,7 +115,7 @@ async function getBinanceBalance(){
         if (typeof balances.USDT !== "undefined") {
             console.log("USDT balance: ", balances.USDT.available);
         }
-        if (typeof balances.USDT !== "undefined") {
+        if (typeof balances.LUNA !== "undefined") {
             console.log("LUNA balance: ", balances.LUNA.available);
         }
     });
@@ -176,7 +155,6 @@ async function getTradeHistory(){
         }
 }
 
-//
 app.get('/bal', (req, res) => {
   getBal()
       .then(async () => res.status(200).send('ds'))
